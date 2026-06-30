@@ -4,7 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 
+import { authClient } from "@/lib/auth-client";
+
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 import {
   Sheet,
   SheetContent,
@@ -14,8 +25,9 @@ import {
 export default function Navbar() {
   const pathname = usePathname();
 
-  // Replace with your auth state
-  const isLoggedIn = false;
+  const { data: session } = authClient.useSession();
+
+  const user = session?.user;
 
   const navLinks = [
     {
@@ -27,6 +39,10 @@ export default function Navbar() {
       href: "/reports",
     },
   ];
+
+  async function handleLogout() {
+    await authClient.signOut();
+  }
 
   return (
     <header className="border-b bg-background">
@@ -48,12 +64,35 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* Desktop Buttons */}
+        {/* Desktop Right */}
         <div className="hidden items-center gap-3 md:flex">
-          {isLoggedIn ? (
-            <Button variant="destructive">
-              Logout
-            </Button>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="rounded-full">
+                  <Avatar className="h-10 w-10 cursor-pointer">
+                    <AvatarImage
+                      src={user.image ?? ""}
+                      alt={user.name}
+                    />
+
+                    <AvatarFallback>
+                      {user.name?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">Profile</Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem onClick={handleLogout}>
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <>
               <Button variant="outline" asChild>
@@ -61,15 +100,13 @@ export default function Navbar() {
               </Button>
 
               <Button asChild>
-                <Link href="/auth/register">
-                  Register
-                </Link>
+                <Link href="/auth/register">Register</Link>
               </Button>
             </>
           )}
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile */}
         <div className="md:hidden">
           <Sheet>
             <SheetTrigger asChild>
@@ -95,10 +132,32 @@ export default function Navbar() {
                 ))}
 
                 <div className="mt-6 flex flex-col gap-3">
-                  {isLoggedIn ? (
-                    <Button variant="destructive">
-                      Logout
-                    </Button>
+                  {user ? (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage src={user.image ?? ""} />
+
+                          <AvatarFallback>
+                            {user.name?.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        <div>
+                          <p className="font-medium">{user.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Button
+                        variant="destructive"
+                        onClick={handleLogout}
+                      >
+                        Logout
+                      </Button>
+                    </>
                   ) : (
                     <>
                       <Button variant="outline" asChild>
